@@ -1,30 +1,16 @@
-﻿using ABI.System;
 using MakuTweakerNew.Properties;
 using MicaWPF.Core.Enums;
 using MicaWPF.Core.Services;
-using MicaWPF.Styles;
 using Microsoft.Win32;
 using ModernWpf;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.IO;
-using System.Linq;
 using System.Reflection;
-using System.Security.Policy;
-using System.Text;
-using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
 using System.Windows.Input;
 using System.Windows.Media;
-using System.Windows.Media.Animation;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using static System.Runtime.InteropServices.Marshalling.IIUnknownCacheStrategy;
 
 namespace MakuTweakerNew
 {
@@ -32,230 +18,163 @@ namespace MakuTweakerNew
     {
         private MainWindow mw = (MainWindow)System.Windows.Application.Current.MainWindow;
         bool isLoaded = false;
+
+        // Данные для локализации
+        private readonly string[] _languages = { "en", "ru", "ua", "cz", "de", "es", "pl", "et", "zh", "ja", "tl" };
+        
+        // Словарь переводчиков: Код языка -> (Заголовок, Имя)
+        private readonly Dictionary<string, (string Label, string Name)> _translators = new()
+        {
+            ["cz"] = ("Pomohl s lokalizací:", "qCLairvoyant"),
+            ["de"] = ("Hilfe bei der Lokalisierung:", "Scorazio"),
+            ["pl"] = ("Pomoc w lokalizacji:", "dfa_jk"),
+            ["et"] = ("Aitas lokaliseerimisega:", "KirTeanEesti")
+        };
+
         public SettingsAbout()
         {
             InitializeComponent();
+            
+            // Базовая инициализация
             credN.Text = "Mark Adderly\nNikitori\nNikitori, Massgrave";
             lang.SelectedIndex = Settings.Default.langSI;
-            relang();
-            UpdateLocalizationCredits();
+            
             if (checkWinVer() < 22000)
             {
                 style.Visibility = Visibility.Collapsed;
                 styleL.Visibility = Visibility.Collapsed;
             }
-            var current = MicaWPFServiceUtility.ThemeService.CurrentTheme;
-            theme.SelectedIndex = current == WindowsTheme.Dark ? 1 : 0;
-            switch (Settings.Default.style)
+
+            // Установка темы
+            var currentTheme = MicaWPFServiceUtility.ThemeService.CurrentTheme;
+            theme.SelectedIndex = currentTheme == WindowsTheme.Dark ? 1 : 0;
+
+            // Установка индекса стиля через switch-выражение
+            style.SelectedIndex = Settings.Default.style switch
             {
-                case "Mica":
-                    style.SelectedIndex = 0; break;
-                case "Tabbed":
-                    style.SelectedIndex = 1; break;
-                case "Acrylic":
-                    style.SelectedIndex = 2; break;
-                case "None":
-                    style.SelectedIndex = 3; break;
-            }
+                "Mica" => 0,
+                "Tabbed" => 1,
+                "Acrylic" => 2,
+                "None" => 3,
+                _ => 0
+            };
+
+            relang();
+            UpdateLocalizationCredits();
             isLoaded = true;
         }
+
         private int checkWinVer()
         {
-            string keyPath = @"SOFTWARE\Microsoft\Windows NT\CurrentVersion";
-            string valueName = "CurrentBuild";
-
-            using (RegistryKey key = Registry.LocalMachine.OpenSubKey(keyPath))
+            try
             {
-                if (key != null)
-                {
-                    object value = key.GetValue(valueName);
-
-                    if (value != null && int.TryParse(value.ToString(), out int build))
-                    {
-                        return build;
-                    }
-                }
+                using var key = Registry.LocalMachine.OpenSubKey(@"SOFTWARE\Microsoft\Windows NT\CurrentVersion");
+                var value = key?.GetValue("CurrentBuild");
+                return (value != null && int.TryParse(value.ToString(), out int build)) ? build : 19045;
             }
-            return 19045;
+            catch { return 19045; }
         }
 
-        private void Button_Click(object sender, RoutedEventArgs e)
-        {
-            Process.Start(new ProcessStartInfo("https://adderly.top") { UseShellExecute = true });
-        }
+        // Вспомогательный метод для ссылок
+        private void OpenUrl(string url) => Process.Start(new ProcessStartInfo(url) { UseShellExecute = true });
 
-        private void Image_MouseLeftButtonUp(object sender, MouseButtonEventArgs e)
-        {
-            Process.Start(new ProcessStartInfo("https://boosty.to/adderly") { UseShellExecute = true });
-        }
+        #region Обработчики событий (имена оставлены как в XAML)
 
-        private void Image_MouseLeftButtonUp_2(object sender, MouseButtonEventArgs e)
-        {
-            Process.Start(new ProcessStartInfo("https://t.me/adderly324") { UseShellExecute = true });
-        }
+        private void Button_Click(object sender, RoutedEventArgs e) => OpenUrl("https://adderly.top");
 
-        private void Image_MouseLeftButtonUp_3(object sender, MouseButtonEventArgs e)
-        {
-            Process.Start(new ProcessStartInfo("https://youtube.com/@MakuAdarii") { UseShellExecute = true });
-        }
+        private void Image_MouseLeftButtonUp(object sender, MouseButtonEventArgs e) => OpenUrl("https://boosty.to/adderly");
+
+        private void Image_MouseLeftButtonUp_2(object sender, MouseButtonEventArgs e) => OpenUrl("https://t.me/adderly324");
+
+        private void Image_MouseLeftButtonUp_3(object sender, MouseButtonEventArgs e) => OpenUrl("https://youtube.com/@MakuAdarii");
 
         private void theme_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (isLoaded)
-            {
-                switch (theme.SelectedIndex)
-                {
-                    case 0:
-                        Settings.Default.theme = "Light";
-                        MicaWPFServiceUtility.ThemeService.ChangeTheme(MicaWPF.Core.Enums.WindowsTheme.Light);
-                        ThemeManager.Current.ApplicationTheme = ApplicationTheme.Light;
-                        mw.Foreground = System.Windows.Media.Brushes.Black;
-                        mw.Separator.Stroke = System.Windows.Media.Brushes.Black;
-                        break;
-                    case 1:
-                        Settings.Default.theme = "Dark";
-                        MicaWPFServiceUtility.ThemeService.ChangeTheme(MicaWPF.Core.Enums.WindowsTheme.Dark);
-                        ThemeManager.Current.ApplicationTheme = ApplicationTheme.Dark;
-                        mw.Foreground = System.Windows.Media.Brushes.White;
-                        mw.Separator.Stroke = System.Windows.Media.Brushes.White;
-                        break;
-                }
-                Settings.Default.Save();
-            }
+            if (!isLoaded) return;
+
+            bool isDark = theme.SelectedIndex == 1;
+            Settings.Default.theme = isDark ? "Dark" : "Light";
+            
+            MicaWPFServiceUtility.ThemeService.ChangeTheme(isDark ? WindowsTheme.Dark : WindowsTheme.Light);
+            ThemeManager.Current.ApplicationTheme = isDark ? ApplicationTheme.Dark : ApplicationTheme.Light;
+            
+            Brush color = isDark ? Brushes.White : Brushes.Black;
+            mw.Foreground = color;
+            mw.Separator.Stroke = color;
+
+            Settings.Default.Save();
         }
 
         private void lang_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (isLoaded)
+            if (!isLoaded) return;
+
+            int idx = lang.SelectedIndex;
+            if (idx >= 0 && idx < _languages.Length)
             {
-                switch (lang.SelectedIndex)
-                {
-                    case 0:
-                        Settings.Default.lang = "en";
-                        break;
-                    case 1:
-                        Settings.Default.lang = "ru";
-                        break;
-                    case 2:
-                        Settings.Default.lang = "ua";
-                        break;
-                    case 3:
-                        Settings.Default.lang = "cz";
-                        break;
-                    case 4:
-                        Settings.Default.lang = "de";
-                        break;
-                    case 5:
-                        Settings.Default.lang = "es";
-                        break;
-                    case 6:
-                        Settings.Default.lang = "pl";
-                        break;
-                    case 7:
-                        Settings.Default.lang = "et";
-                        break;
-                    case 8:
-                        Settings.Default.lang = "zh";
-                        break;
-                    case 9:
-                        Settings.Default.lang = "ja";
-                        break;
-                    case 10:
-                        Settings.Default.lang = "tl";
-                        break;
-                }
-                Settings.Default.langSI = lang.SelectedIndex;
-                Settings.Default.Save();
-                mw.LoadLang(Settings.Default.lang);
-                relang();
-                UpdateLocalizationCredits();
+                Settings.Default.lang = _languages[idx];
             }
+            
+            Settings.Default.langSI = idx;
+            Settings.Default.Save();
+            
+            mw.LoadLang(Settings.Default.lang);
+            relang();
+            UpdateLocalizationCredits();
         }
+
+        private void style_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (!isLoaded) return;
+
+            // Кортеж: тип фона и строковое имя
+            var styleData = style.SelectedIndex switch
+            {
+                0 => (Type: BackdropType.Mica, Name: "Mica"),
+                1 => (Type: BackdropType.Tabbed, Name: "Tabbed"),
+                2 => (Type: BackdropType.Acrylic, Name: "Acrylic"),
+                _ => (Type: BackdropType.None, Name: "None")
+            };
+
+            MicaWPFServiceUtility.ThemeService.EnableBackdrop(mw, styleData.Type);
+            Settings.Default.style = styleData.Name;
+            Settings.Default.Save();
+        }
+
+        #endregion
+
         private void relang()
         {
-            var languageCode = Properties.Settings.Default.lang ?? "en";
+            var languageCode = Settings.Default.lang ?? "en";
             var ab = MainWindow.Localization.LoadLocalization(languageCode, "ab");
             var b = MainWindow.Localization.LoadLocalization(languageCode, "base");
+
             credL.Text = ab["main"]["credL"];
             label.Text = ab["main"]["label"];
             web.Content = ab["main"]["atop"];
             langL.Text = ab["main"]["lang"];
             styleL.Text = ab["main"]["st"];
+            themeL.Text = ab["main"]["th"];
             l.Content = " " + ab["main"]["l"];
             d.Content = " " + ab["main"]["d"];
-            themeL.Text = ab["main"]["th"];
             off.Content = " " + b["def"]["off"];
-            string buildVersion;
-            var assembly = Assembly.GetExecutingAssembly();
-
         }
 
         private void UpdateLocalizationCredits()
         {
-            string lang = Settings.Default.lang ?? "en";
+            string currentLang = Settings.Default.lang ?? "en";
 
-            if (lang == "cz")
+            if (_translators.TryGetValue(currentLang, out var credits))
             {
                 credLang.Visibility = Visibility.Visible;
                 credLangtext.Visibility = Visibility.Visible;
-
-                credLang.Text = "Pomohl s lokalizací:";
-                credLangtext.Text = "qCLairvoyant";
-            }
-            else if (lang == "de")
-            {
-                credLang.Visibility = Visibility.Visible;
-                credLangtext.Visibility = Visibility.Visible;
-
-                credLang.Text = "Hilfe bei der Lokalisierung:";
-                credLangtext.Text = "Scorazio";
-            }
-            else if (lang == "pl")
-            {
-                credLang.Visibility = Visibility.Visible;
-                credLangtext.Visibility = Visibility.Visible;
-
-                credLang.Text = "Pomoc w lokalizacji:";
-                credLangtext.Text = "dfa_jk";
-            }
-            else if (lang == "et")
-            {
-                credLang.Visibility = Visibility.Visible;
-                credLangtext.Visibility = Visibility.Visible;
-
-                credLang.Text = "Aitas lokaliseerimisega:";
-                credLangtext.Text = "KirTeanEesti";
+                credLang.Text = credits.Label;
+                credLangtext.Text = credits.Name;
             }
             else
             {
                 credLang.Visibility = Visibility.Collapsed;
                 credLangtext.Visibility = Visibility.Collapsed;
-            }
-        }
-
-        private void style_SelectionChanged(object sender, SelectionChangedEventArgs e)
-        {
-            if (isLoaded)
-            {
-                switch (style.SelectedIndex)
-                {
-                    case 0:
-                        MicaWPFServiceUtility.ThemeService.EnableBackdrop(mw, BackdropType.Mica);
-                        Settings.Default.style = "Mica";
-                        break;
-                    case 1:
-                        MicaWPFServiceUtility.ThemeService.EnableBackdrop(mw, BackdropType.Tabbed);
-                        Settings.Default.style = "Tabbed";
-                        break;
-                    case 2:
-                        MicaWPFServiceUtility.ThemeService.EnableBackdrop(mw, BackdropType.Acrylic);
-                        Settings.Default.style = "Acrylic";
-                        break;
-                    case 3:
-                        MicaWPFServiceUtility.ThemeService.EnableBackdrop(mw, BackdropType.None);
-                        Settings.Default.style = "None";
-                        break;
-                }
             }
         }
     }

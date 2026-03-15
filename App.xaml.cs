@@ -56,8 +56,8 @@ namespace MakuTweakerNew
                 Directory.CreateDirectory(logFolder);
                 string logFilePath = Path.Combine(logFolder, $"makutw-crash_{DateTime.Now:yyyy-MM-dd_HH-mm-ss}.txt");
 
-                string chatMessage = "If MakuTweaker crashed through no fault of your own, please report this crash in the chat:\r\nhttps://t.me/makuadarii\n\n" +
-                                     "Если MakuTweaker крашнулся не по вашей вине, то, пожалуйста, сообщите об этом краше в чат:\r\nhttps://t.me/makuadarii";
+                string chatMessage = "If MakuTweaker crashed through no fault of your own, please report this crash in the GitHub Repository: https://github.com/MarkAdderly/MakuTweaker" +
+                                     "Если MakuTweaker крашнулся не по вашей вине, то, пожалуйста, сообщите об этом на GitHub репозитории:\nhttps://github.com/MarkAdderly/MakuTweaker";
 
                 errorDetails += "\n\n" + chatMessage;
                 File.WriteAllText(logFilePath, errorDetails);
