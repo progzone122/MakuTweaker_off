@@ -21,12 +21,12 @@ With this program, you can flexibly configure and personalize the system, manage
 You can also perform a quick Windows setup, manage the installation of system components, and remove system bloatware.
 MakuTweaker offers several interface themes that allow you to customize the program to your taste. The design built on the MicaWPF framework for full integration with the Windows 11 design language.
 
-Technical Details
+# Technical Details
 IDE: Developed in Visual Studio 2022.
 Framework: Powered by .NET 8.0.
 Publicly available source code for the community.
 Administrator rights are required for correct operation within the IDE.
 To ensure the Visual Studio Designer displays elements correctly and populates the cache, you must build the project before opening forms in the editor for the first time.
 
-Version Limitations
+# Version Limitations
 The "Windows Activation" page is absent from this version of the source code for legal reasons.
